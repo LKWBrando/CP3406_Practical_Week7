@@ -1,3 +1,5 @@
+//Code used to draw on the Canvas taken from (https://stackoverflow.com/questions/16650419/draw-in-canvas-by-finger-android)
+
 package com.cp3406test.photoeditor;
 
 import android.content.Context;
