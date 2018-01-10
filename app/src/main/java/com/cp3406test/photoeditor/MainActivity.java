@@ -1,16 +1,14 @@
 package com.cp3406test.photoeditor;
 
 import android.content.Intent;
-import android.graphics.drawable.Drawable;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.support.v4.content.ContextCompat;
+import android.provider.MediaStore;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.MotionEvent;
-
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-
 public class MainActivity extends AppCompatActivity {
 
     private Display display;
@@ -19,15 +17,14 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        display = (Display)findViewById(R.id.display);
+        ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
 
-        Intent chooseImage = new Intent(Intent.ACTION_PICK,
-                android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        display = findViewById(R.id.display);
+        Intent chooseImage = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         startActivityForResult(chooseImage , 1);
-
-
     }
 
+    /*
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         Position position = display.getPosition(event.getX(), event.getY());
@@ -50,22 +47,27 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
         return super.onTouchEvent(event);
-    }
+    }*/
 
-    protected void onActivityResult(int requestCode, int resultCode, Intent imageReturnedIntent) {
-        super.onActivityResult(requestCode, resultCode, imageReturnedIntent);
-        Drawable backgroundImg;
-        switch(requestCode) {
-            case 1:
-                if(resultCode == RESULT_OK){
-                    Uri selectedImage = imageReturnedIntent.getData();
-                    try {
-                        InputStream inputStream = getContentResolver().openInputStream(selectedImage);
-                        backgroundImg = Drawable.createFromStream(inputStream, selectedImage.toString());
-                        display.setBackground(backgroundImg);
-                    } catch (FileNotFoundException e) {}
-                }
-                break;
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 1 && resultCode == RESULT_OK && null != data) {
+            Uri selectedImage = data.getData();
+            String[] filePathColumn = { MediaStore.Images.Media.DATA };
+
+            Cursor cursor = getContentResolver().query(selectedImage,
+                    filePathColumn, null, null, null);
+            cursor.moveToFirst();
+
+            int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+            String picturePath = cursor.getString(columnIndex);
+            cursor.close();
+
+            Bitmap loadedBitmap = BitmapFactory.decodeFile(picturePath);
+            Bitmap drawableBitmap = loadedBitmap.copy(Bitmap.Config.ARGB_8888, true);
+            display.setCanvasBitmap(drawableBitmap);
+
         }
     }
 }
